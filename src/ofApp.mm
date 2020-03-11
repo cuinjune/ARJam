@@ -82,17 +82,29 @@ void ofApp::draw()
                 // if([anchor isKindOfClass:[ARPlaneAnchor class]]) { // do something if we find a plane anchor}
                 // Not important for this example but something good to remember.
                 
-                ofPushMatrix();
-                ofMatrix4x4 mat = convert<matrix_float4x4, ofMatrix4x4>(anchor.transform);
-                ofMultMatrix(mat);
                 
-                ofSetColor(255);
-                ofRotateDeg(90,0,0,1);
+                if([anchor isKindOfClass:[ARPlaneAnchor class]])
+                {
+                    cout << "PLANE DETECTED" << endl;
+                    
+                    
+                    ofPushMatrix();
+                    ofMatrix4x4 mat = convert<matrix_float4x4, ofMatrix4x4>(anchor.transform);
+                    ofMultMatrix(mat);
+                    
+                    ofSetColor(255);
+                    ofRotateZDeg(90);
+                    ofRotateYDeg(90);
+                    
+                    cout << i << endl;
+                    
+                    img.draw(-0.25 / 2, -0.25 / 2,0.25, 0.25);
+                    
+                    
+                    ofPopMatrix();
+                }
                 
-                img.draw(-0.25 / 2, -0.25 / 2,0.25,0.25);
                 
-                
-                ofPopMatrix();
             }
           
             camera.end();

@@ -17,9 +17,25 @@ using namespace ofxARKit::core;
 - (void)loadView {
     [super loadView];
     
+    
+    
+    
+    
+    
     SFormat format;
     format.enableLighting();
     self.session = generateNewSession(format);
+    
+    
+    // World tracking is used for 6DOF, there are other tracking configurations as well, see
+    // https://developer.apple.com/documentation/arkit/arconfiguration
+    ARWorldTrackingConfiguration *configuration = [ARWorldTrackingConfiguration new];
+
+    // setup horizontal plane detection - note that this is optional
+    configuration.planeDetection = ARPlaneDetectionHorizontal;
+
+    // start the session
+    [self.session runWithConfiguration:configuration];
     
     
     OFAppViewController *viewController;
