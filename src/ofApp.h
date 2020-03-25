@@ -4,8 +4,7 @@
 #include <ARKit/ARKit.h>
 #include "ofxARKit.h"
 
-class ofApp : public ofxiOSApp
-{
+class ofApp : public ofxiOSApp {
     public:
         ofApp(ARSession *session);
         ofApp();
@@ -27,11 +26,21 @@ class ofApp : public ofxiOSApp
         void gotMemoryWarning();
         void deviceOrientationChanged(int newOrientation);
     
-        vector < matrix_float4x4 > mats;
-        vector<ARAnchor*> anchors;
+        // ====== functions ====== //
+        void drawPlaneDots(int num, float gap, float radius);
+        
+    
+        // ====== variables ====== //
         ofCamera camera;
+        ofImage ipadIcon, arrow;
+        int screenWidth, screenHeight;
+        double ipadIconOffsetX;
+        ofTrueTypeFont guideFont;
+    
+        //for debugging
         ofTrueTypeFont font;
         ofImage img;
+        
     
         // ====== AR STUFF ======== //
         ARSession *session;

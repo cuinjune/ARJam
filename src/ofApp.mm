@@ -2,179 +2,214 @@
 
 using namespace ofxARKit::common;
 
-void logSIMD(const simd::float4x4 &matrix)
-{
-    std::stringstream output;
-    int columnCount = sizeof(matrix.columns) / sizeof(matrix.columns[0]);
-    for (int column = 0; column < columnCount; column++) {
-        int rowCount = sizeof(matrix.columns[column]) / sizeof(matrix.columns[column][0]);
-        for (int row = 0; row < rowCount; row++) {
-            output << std::setfill(' ') << std::setw(9) << matrix.columns[column][row];
-            output << ' ';
-        }
-        output << std::endl;
-    }
-    output << std::endl;
-}
-
 //--------------------------------------------------------------
-ofApp::ofApp(ARSession *session)
-{
+ofApp::ofApp(ARSession *session) {
     this->session = session;
     cout << "creating ofApp" << endl;
 }
 
-ofApp::ofApp()
-{
+ofApp::ofApp() {
 }
 
 //--------------------------------------------------------------
-ofApp :: ~ofApp()
-{
+ofApp :: ~ofApp() {
     cout << "destroying ofApp" << endl;
 }
 
 //--------------------------------------------------------------
-void ofApp::setup()
-{
+void ofApp::setup() {
     ofBackground(127);
+    ofSetFrameRate(60);
+    ofSetVerticalSync(true);
     
+    //load assets
+    ipadIcon.load("images/ipad.png");
+    arrow.load("images/arrow.png");
+    guideFont.load("fonts/Roboto-Regular.ttf", 32);
+    
+    //for debugging
     img.load("OpenFrameworks.png");
+    font.load("fonts/mono0755.ttf", 16);
     
-    int fontSize = 8;
-    if (ofxiOSGetOFWindow()->isRetinaSupportedOnDevice())
-        fontSize *= 2;
+    screenWidth = ofGetWidth();
+    screenHeight = ofGetHeight();
+    ipadIconOffsetX = 0.0;
+    cout << screenWidth << " " << screenHeight << endl;
     
-    font.load("fonts/mono0755.ttf", fontSize);
-    
+    //initialize ARProcessor
     processor = ARProcessor::create(session);
+    processor->deviceOrientationChanged(UIInterfaceOrientationLandscapeRight);
     processor->setup();
 }
 
 //--------------------------------------------------------------
-void ofApp::update()
-{
+void ofApp::update() {
     processor->update();
 }
 
 //--------------------------------------------------------------
-void ofApp::draw()
-{
-    ofEnableAlphaBlending();
+void ofApp::draw() {
     
+    ofEnableAlphaBlending();
     ofDisableDepthTest();
     processor->draw();
     ofEnableDepthTest();
+    bool isPlaneAnchorFound = false;
+    bool doesInstrumentExist = false;
     
-    
-    if (session.currentFrame){
-        if (session.currentFrame.camera){
-           
+    if (session.currentFrame) {
+        if (session.currentFrame.camera) {
+            const ofMatrix4x4 &cameraMatrix4x4 = convert<matrix_float4x4, ofMatrix4x4>(session.currentFrame.camera.transform);
+            const ofVec3f &cameraPosition = cameraMatrix4x4.getTranslation();
             camera.begin();
             processor->setARCameraMatrices();
             
-            for (int i = 0; i < session.currentFrame.anchors.count; i++){
-                ARAnchor * anchor = session.currentFrame.anchors[i];
-                
-                // note - if you need to differentiate between different types of anchors, there is a
-                // "isKindOfClass" method in objective-c that could be used. For example, if you wanted to
-                // check for a Plane anchor, you could put this in an if statement.
-                // if([anchor isKindOfClass:[ARPlaneAnchor class]]) { // do something if we find a plane anchor}
-                // Not important for this example but something good to remember.
-                
-                
-                if([anchor isKindOfClass:[ARPlaneAnchor class]])
-                {
-                    cout << "PLANE DETECTED" << endl;
+            bool doesClosestPlaneAnchorExist = false;
+            float closestPlaneAnchorPositionY = 0.0f;
+            
+            for (int i = 0; i < session.currentFrame.anchors.count; i++) {
+                ARAnchor *anchor = session.currentFrame.anchors[i];
+                if ([anchor isKindOfClass:[ARPlaneAnchor class]]) {
+                    const ofMatrix4x4 &planeAnchorMatrix4x4 = convert<matrix_float4x4, ofMatrix4x4>(anchor.transform);
+                    const ofVec3f &planeAnchorPosition = planeAnchorMatrix4x4.getTranslation();
                     
-                    
+                    if (planeAnchorPosition.y < cameraPosition.y - 0.1) {
+                        if (doesClosestPlaneAnchorExist) {
+                            if (planeAnchorPosition.y > closestPlaneAnchorPositionY) {
+                                closestPlaneAnchorPositionY = planeAnchorPosition.y;
+                            }
+                        }
+                        else {
+                            closestPlaneAnchorPositionY = planeAnchorPosition.y;
+                            doesClosestPlaneAnchorExist = true;
+                        }
+                    }
+                }
+                else {
                     ofPushMatrix();
                     ofMatrix4x4 mat = convert<matrix_float4x4, ofMatrix4x4>(anchor.transform);
                     ofMultMatrix(mat);
-                    
                     ofSetColor(255);
-                    ofRotateZDeg(90);
-                    ofRotateYDeg(90);
-                    
-                    cout << i << endl;
-                    
-                    img.draw(-0.25 / 2, -0.25 / 2,0.25, 0.25);
-                    
-                    
+                    img.draw(-0.25 / 2, -0.25 / 2,0.25,0.25);
                     ofPopMatrix();
+                    doesInstrumentExist = true;
                 }
-                
-                
             }
-          
+            if (doesClosestPlaneAnchorExist) {
+                ofPushMatrix();
+                ofPushStyle();
+                ofTranslate(0, closestPlaneAnchorPositionY);
+                ofRotateXDeg(90);
+                ofSetColor(255, 255, 255, 100);
+                drawPlaneDots(50, 0.05f, 0.005f);
+                ofPopStyle();
+                ofPopMatrix();
+                isPlaneAnchorFound = true;
+            }
             camera.end();
         }
-        
     }
     ofDisableDepthTest();
     // ========== DEBUG STUFF ============= //
     processor->debugInfo.drawDebugInformation(font);
-}
-
-//--------------------------------------------------------------
-void ofApp::exit()
-{
-}
-
-//--------------------------------------------------------------
-void ofApp::touchDown(ofTouchEventArgs &touch)
-{
-    if (session.currentFrame){
-        ARFrame *currentFrame = [session currentFrame];
+    
+    if (!isPlaneAnchorFound && !doesInstrumentExist) {
         
-        matrix_float4x4 translation = matrix_identity_float4x4;
-        translation.columns[3].z = -0.2;
-        matrix_float4x4 transform = matrix_multiply(currentFrame.camera.transform, translation);
+        //draw ipad icon
+        ofPushMatrix();
+        ofPushStyle();
+        ofSetRectMode(OF_RECTMODE_CENTER);
+        ofSetColor(255, 255, 255, 255);
+        ipadIconOffsetX = ipadIconOffsetX < TWO_PI ? ipadIconOffsetX + 0.07 : 0.0;
+        const int offsetX = static_cast<int>(sin(ipadIconOffsetX) * screenWidth * 0.05);
+        ofTranslate(screenWidth * 0.5 + offsetX, screenHeight * 0.45);
+        ipadIcon.draw(0, 0, screenWidth * 0.11, screenHeight * 0.1);
+        arrow.draw(-screenWidth * 0.095, 0, -screenWidth * 0.039, screenHeight * 0.03);
+        arrow.draw(screenWidth * 0.095, 0, screenWidth * 0.039, screenHeight * 0.03);
+        ofPopStyle();
+        ofPopMatrix();
         
-        // Add a new anchor to the session
-        ARAnchor *anchor = [[ARAnchor alloc] initWithTransform:transform];
-        
-        [session addAnchor:anchor];
+        //draw guide font
+        const string &guideText = "Looking for a surface to place your instrument";
+        guideFont.drawString(guideText, screenWidth / 2 - guideFont.stringWidth(guideText) * 0.5, screenHeight * 0.575);
     }
 }
 
 //--------------------------------------------------------------
-void ofApp::touchMoved(ofTouchEventArgs &touch)
-{
+void ofApp::exit() {
 }
 
 //--------------------------------------------------------------
-void ofApp::touchUp(ofTouchEventArgs &touch)
-{
+void ofApp::touchDown(ofTouchEventArgs &touch) {
+    
+    //remove all plane anchors
+    for (int i = 0; i < session.currentFrame.anchors.count; i++) {
+        ARAnchor * anchor = session.currentFrame.anchors[i];
+        if([anchor isKindOfClass:[ARPlaneAnchor class]]) {
+            [session removeAnchor:anchor];
+        }
+    }
+    
+////    reset the AR Tracking
+//    [session runWithConfiguration:session.configuration options:ARSessionRunOptionResetTracking];
+  
+    
+    if (session.currentFrame) {
+        ARFrame *currentFrame = [session currentFrame];
+        matrix_float4x4 translation = matrix_identity_float4x4;
+        translation.columns[3].z = -1; //-0.2
+        matrix_float4x4 transform = matrix_multiply(currentFrame.camera.transform, translation);
+
+        // Add a new anchor to the session
+        ARAnchor *anchor = [[ARAnchor alloc] initWithTransform:transform];
+        [session addAnchor:anchor];
+    }
+    
+    
+    
+    
+
+    
+    
 }
 
 //--------------------------------------------------------------
-void ofApp::touchDoubleTap(ofTouchEventArgs &touch)
-{
+void ofApp::touchMoved(ofTouchEventArgs &touch) {
 }
 
 //--------------------------------------------------------------
-void ofApp::touchCancelled(ofTouchEventArgs &touch)
-{
+void ofApp::touchUp(ofTouchEventArgs &touch) {
 }
 
 //--------------------------------------------------------------
-void ofApp::lostFocus()
-{
+void ofApp::touchDoubleTap(ofTouchEventArgs &touch) {
 }
 
 //--------------------------------------------------------------
-void ofApp::gotFocus()
-{
+void ofApp::touchCancelled(ofTouchEventArgs &touch) {
 }
 
 //--------------------------------------------------------------
-void ofApp::gotMemoryWarning()
-{
+void ofApp::lostFocus() {
 }
 
 //--------------------------------------------------------------
-void ofApp::deviceOrientationChanged(int newOrientation)
-{
-    processor->deviceOrientationChanged(newOrientation);
+void ofApp::gotFocus() {
+}
+
+//--------------------------------------------------------------
+void ofApp::gotMemoryWarning() {
+}
+
+//--------------------------------------------------------------
+void ofApp::deviceOrientationChanged(int newOrientation) {
+
+}
+
+//--------------------------------------------------------------
+void ofApp::drawPlaneDots(int num, float gap, float radius) {
+    const int half = num / 2;
+    for (int x = -half; x < half; ++x)
+        for (int y = -half; y < half; ++y)
+            ofDrawCircle(x * gap, y * gap, radius);
 }

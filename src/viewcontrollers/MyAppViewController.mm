@@ -17,15 +17,9 @@ using namespace ofxARKit::core;
 - (void)loadView {
     [super loadView];
     
-    
-    
-    
-    
-    
     SFormat format;
     format.enableLighting();
     self.session = generateNewSession(format);
-    
     
     // World tracking is used for 6DOF, there are other tracking configurations as well, see
     // https://developer.apple.com/documentation/arkit/arconfiguration
@@ -45,16 +39,6 @@ using namespace ofxARKit::core;
     [self.navigationController setNavigationBarHidden:TRUE];
     [self.navigationController pushViewController:viewController animated:NO];
     self.navigationController.navigationBar.topItem.title = @"ofApp";
-}
-
-
-- (BOOL) shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation {
-    BOOL bRotate = NO;
-    bRotate = bRotate || (toInterfaceOrientation == UIInterfaceOrientationPortrait);
-    bRotate = bRotate || (toInterfaceOrientation == UIInterfaceOrientationPortraitUpsideDown);
-    bRotate = bRotate || (toInterfaceOrientation == UIInterfaceOrientationLandscapeLeft);
-    bRotate = bRotate || (toInterfaceOrientation == UIInterfaceOrientationLandscapeRight);
-    return bRotate;
 }
 
 @end

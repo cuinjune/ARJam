@@ -33,9 +33,7 @@
                                          animated:YES];
     
     //--- style the UINavigationController
-    self.navigationController.navigationBar.barStyle = UIBarStyleBlackTranslucent;
     self.navigationController.navigationBar.topItem.title = @"Home";
-    
     return YES;
 }
 

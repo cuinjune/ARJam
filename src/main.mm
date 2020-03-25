@@ -1,7 +1,6 @@
 #include "ofApp.h"
 
-int main()
-{
+int main() {
     //  here are the most commonly used iOS window settings.
     //------------------------------------------------------
     ofiOSWindowSettings settings;
@@ -16,7 +15,7 @@ int main()
     ofAppiOSWindow * window = (ofAppiOSWindow *)(ofCreateWindow(settings).get());
     
     bool bUseNative = true;
-    if (bUseNative){
+    if (bUseNative) {
         /**
          *
          *  Below is how you start using a native ios setup.
