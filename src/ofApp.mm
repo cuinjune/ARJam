@@ -25,6 +25,7 @@ void ofApp::setup() {
     //load assets
     ipadIcon.load("images/ipad.png");
     arrow.load("images/arrow.png");
+    tapIcon.load("images/tap.png");
     guideFont.load("fonts/Roboto-Regular.ttf", 32);
     
     //for debugging
@@ -34,6 +35,7 @@ void ofApp::setup() {
     screenWidth = ofGetWidth();
     screenHeight = ofGetHeight();
     ipadIconOffsetX = 0.0;
+    tapIconScaleAmt = 0.0;
     cout << screenWidth << " " << screenHeight << endl;
     
     //initialize ARProcessor
@@ -49,7 +51,6 @@ void ofApp::update() {
 
 //--------------------------------------------------------------
 void ofApp::draw() {
-    
     ofEnableAlphaBlending();
     ofDisableDepthTest();
     processor->draw();
@@ -113,26 +114,43 @@ void ofApp::draw() {
     // ========== DEBUG STUFF ============= //
     processor->debugInfo.drawDebugInformation(font);
     
-    if (!isPlaneAnchorFound && !doesInstrumentExist) {
-        
-        //draw ipad icon
-        ofPushMatrix();
+    if (!doesInstrumentExist) {
         ofPushStyle();
-        ofSetRectMode(OF_RECTMODE_CENTER);
         ofSetColor(255, 255, 255, 255);
-        ipadIconOffsetX = ipadIconOffsetX < TWO_PI ? ipadIconOffsetX + 0.07 : 0.0;
-        const int offsetX = static_cast<int>(sin(ipadIconOffsetX) * screenWidth * 0.05);
-        ofTranslate(screenWidth * 0.5 + offsetX, screenHeight * 0.45);
-        ipadIcon.draw(0, 0, screenWidth * 0.11, screenHeight * 0.1);
-        arrow.draw(-screenWidth * 0.095, 0, -screenWidth * 0.039, screenHeight * 0.03);
-        arrow.draw(screenWidth * 0.095, 0, screenWidth * 0.039, screenHeight * 0.03);
+        ofSetRectMode(OF_RECTMODE_CENTER);
+        if (!isPlaneAnchorFound) {
+            //draw ipad icon
+            ofPushMatrix();
+            ipadIconOffsetX = ipadIconOffsetX < TWO_PI ? ipadIconOffsetX + 0.06 : 0.0;
+            const double offsetX = sin(ipadIconOffsetX) * screenWidth * 0.04;
+            ofTranslate(screenWidth * 0.5 + offsetX, screenHeight * 0.45);
+            ipadIcon.draw(0, 0, screenWidth * 0.11, screenHeight * 0.1);
+            arrow.draw(-screenWidth * 0.095, 0, -screenWidth * 0.039, screenHeight * 0.03);
+            arrow.draw(screenWidth * 0.095, 0, screenWidth * 0.039, screenHeight * 0.03);
+            ofPopMatrix();
+            
+            //draw guide font
+            const string &guideText = "Looking for a surface to place your instrument";
+            guideFont.drawString(guideText, screenWidth / 2 - guideFont.stringWidth(guideText) * 0.5, screenHeight * 0.575);
+        }
+        else {
+            //draw tap icon
+            ofPushMatrix();
+            ofTranslate(screenWidth * 0.5, screenHeight * 0.45);
+            tapIconScaleAmt = tapIconScaleAmt < TWO_PI ? tapIconScaleAmt + 0.12 : 0.0;
+            const double scaleAmt = sin(tapIconScaleAmt) * 0.1;
+            ofScale(1 + scaleAmt);
+            tapIcon.draw(0, 0, screenWidth * 0.053, screenHeight * 0.1);
+            ofPopMatrix();
+            
+            //draw guide font
+            const string &guideText = "Surface Detected! Now tap a location to place the instrument";
+            guideFont.drawString(guideText, screenWidth / 2 - guideFont.stringWidth(guideText) * 0.5, screenHeight * 0.575);
+        }
         ofPopStyle();
-        ofPopMatrix();
-        
-        //draw guide font
-        const string &guideText = "Looking for a surface to place your instrument";
-        guideFont.drawString(guideText, screenWidth / 2 - guideFont.stringWidth(guideText) * 0.5, screenHeight * 0.575);
     }
+    
+    
 }
 
 //--------------------------------------------------------------

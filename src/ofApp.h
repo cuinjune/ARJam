@@ -32,10 +32,11 @@ class ofApp : public ofxiOSApp {
     
         // ====== variables ====== //
         ofCamera camera;
-        ofImage ipadIcon, arrow;
-        int screenWidth, screenHeight;
-        double ipadIconOffsetX;
+        ofImage ipadIcon, arrow, tapIcon;
         ofTrueTypeFont guideFont;
+        int screenWidth, screenHeight;
+        double ipadIconOffsetX, tapIconScaleAmt;
+        
     
         //for debugging
         ofTrueTypeFont font;
