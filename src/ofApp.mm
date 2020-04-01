@@ -41,6 +41,28 @@ void ofApp::setup() {
     tapIconScaleAmt = 0.0;
     cout << screenWidth << " " << screenHeight << endl;
     
+    cameraAnchorDistance = 100.0f;
+    
+
+    light.setOrientation(ofQuaternion(120, ofVec3f(1, 0, 0)));
+    light.setDirectional();
+    light.setSpecularColor(ofColor(0,0,0));
+    light.setDiffuseColor(ofColor(200, 200, 200));
+    light.setAmbientColor(ofColor(0));
+    
+    material.setSpecularColor(ofColor(100,100,100));
+    material.setDiffuseColor(ofColor(200, 200, 200));
+    material.setAmbientColor(ofColor(0));
+    material.setEmissiveColor(ofColor(50, 50, 50));
+    material.setShininess(120);
+    
+    material2.setSpecularColor(ofColor(50,50,50));
+    material2.setDiffuseColor(ofColor(100, 100, 100));
+    material2.setAmbientColor(ofColor(0));
+    material2.setEmissiveColor(ofColor(25, 25, 25));
+    material2.setShininess(60);
+    
+    
     //initialize ARProcessor
     processor = ARProcessor::create(session);
     processor->deviceOrientationChanged(UIInterfaceOrientationLandscapeRight);
@@ -86,16 +108,58 @@ void ofApp::draw() {
                 }
             }
             else { //handle non-plane anchors
+                
+                const ofVec3f &anchorPosition = anchorMatrix4x4.getTranslation();
+                cameraAnchorDistance = anchorPosition.distance(cameraPosition);
+                
+                ofEnableDepthTest();
+                ofEnableLighting();
+                light.enable();
+                
+                
                 ofPushMatrix();
                 ofPushStyle();
-                cout << anchorMatrix4x4 << endl;
                 ofMultMatrix(anchorMatrix4x4);
-                ofSetColor(0, 255, 0, 255);
-                ofNoFill();
-                ofSetBoxResolution(10, 10, 10);
-                ofDrawBox(0.15, 0.03, 0.08);
+                
+                const float boxWidth = 0.15;
+                const float boxHeight = 0.1125;
+                const float boxDepth = 0.03;
+           
+                material.begin();
+                ofDrawBox(boxWidth, boxDepth, boxHeight);
+                material.end();
+                
+                material2.begin();
+                
+                
+                const float buttonDepth = 0.004;
+                ofDrawBox(-boxWidth/2 + boxWidth/6, 0, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxDepth + buttonDepth, boxHeight/2 - buttonDepth);
+                
+                ofDrawBox(0, 0, -boxHeight/2 + boxHeight/4, boxWidth/3, boxDepth + buttonDepth, boxHeight/2 - buttonDepth);
+                
+                ofDrawBox(boxWidth/2 - boxWidth/6, 0, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxDepth + buttonDepth, boxHeight/2 - buttonDepth);
+                
+                ofDrawBox(-boxWidth/2 + boxWidth/6, 0, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxDepth + buttonDepth, boxHeight/2 - buttonDepth);
+                
+                ofDrawBox(0, 0, boxHeight/2 - boxHeight/4, boxWidth/3, boxDepth + buttonDepth, boxHeight/2 - buttonDepth);
+                
+                ofDrawBox(boxWidth/2 - boxWidth/6, 0, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxDepth + buttonDepth, boxHeight/2 - buttonDepth);
+                
+                
+                
+                material2.end();
+                
                 ofPopStyle();
                 ofPopMatrix();
+                
+                
+                light.disable();
+                ofDisableLighting();
+                ofDisableDepthTest();
+                
+                
+                
+                
             }
         }
         if (!doesInstrumentExist && doesClosestPlaneAnchorExist) {
@@ -153,6 +217,33 @@ void ofApp::draw() {
             guideFont.drawString(guideText, screenWidth / 2 - guideFont.stringWidth(guideText) * 0.5, screenHeight * 0.575);
         }
         ofPopStyle();
+    }
+    else {
+        if (cameraAnchorDistance < 0.2f) {
+
+            ofPushMatrix();
+            ofPushStyle();
+            ofSetRectMode(OF_RECTMODE_CENTER);
+            const float boxWidth = screenWidth * 0.95;
+            const float boxHeight = screenHeight * 0.95;
+            const float buttonDepth = screenHeight * 0.025;
+             ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
+            ofSetColor(255, 255, 255, 200);
+            ofDrawRectangle(0, 0, boxWidth, boxHeight);
+            
+            ofSetColor(100, 100, 100, 200);
+            ofDrawRectangle(-boxWidth/2 + boxWidth/6, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
+            ofDrawRectangle(0, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
+            ofDrawRectangle(boxWidth/2 - boxWidth/6, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
+            
+            ofDrawRectangle(-boxWidth/2 + boxWidth/6, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
+            ofDrawRectangle(0, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
+            ofDrawRectangle(boxWidth/2 - boxWidth/6, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
+            ofPopStyle();
+            ofPopMatrix();
+            
+        }
+        
     }
     
 }

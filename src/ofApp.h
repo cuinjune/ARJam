@@ -37,7 +37,12 @@ class ofApp : public ofxiOSApp {
         float closestPlaneAnchorPositionY;
         double ipadIconOffsetX, tapIconScaleAmt;
     
-    ofMatrix4x4 anchorMatrix4x4;
+        float cameraAnchorDistance;
+    
+        ofMatrix4x4 anchorMatrix4x4;
+    
+        ofLight light;
+        ofMaterial material, material2;
     
         //for debugging
         ofTrueTypeFont font;
