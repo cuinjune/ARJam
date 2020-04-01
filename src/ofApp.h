@@ -6,6 +6,7 @@
 
 class ofApp : public ofxiOSApp {
     public:
+        // ====== functions ====== //
         ofApp(ARSession *session);
         ofApp();
         ~ofApp();
@@ -26,17 +27,17 @@ class ofApp : public ofxiOSApp {
         void gotMemoryWarning();
         void deviceOrientationChanged(int newOrientation);
     
-        // ====== functions ====== //
-        void drawPlaneDots(int num, float gap, float radius);
         
-    
         // ====== variables ====== //
         ofCamera camera;
         ofImage ipadIcon, arrow, tapIcon;
         ofTrueTypeFont guideFont;
         int screenWidth, screenHeight;
+        bool doesClosestPlaneAnchorExist, doesInstrumentExist;
+        float closestPlaneAnchorPositionY;
         double ipadIconOffsetX, tapIconScaleAmt;
-        
+    
+    ofMatrix4x4 anchorMatrix4x4;
     
         //for debugging
         ofTrueTypeFont font;
