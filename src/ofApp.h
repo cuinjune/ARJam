@@ -39,15 +39,22 @@ class ofApp : public ofxiOSApp {
     
         float cameraAnchorDistance;
     
-        ofMatrix4x4 anchorMatrix4x4;
-    
         ofLight light;
         ofMaterial material, material2;
     
         //for debugging
         ofTrueTypeFont font;
         ofImage img;
-        
+    
+        bool anchorShouldAnimateToFront;
+        float animationLerpAmount; //between 0 and 1
+    
+        ofCamera anchorCamera;
+    
+    bool button1Pressed, button2Pressed, button3Pressed, button4Pressed, button5Pressed, button6Pressed;
+    
+    ofSoundPlayer drum1, drum2, drum3, drum4, drum5, drum6;
+    
     
         // ====== AR STUFF ======== //
         ARSession *session;

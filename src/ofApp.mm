@@ -41,9 +41,8 @@ void ofApp::setup() {
     tapIconScaleAmt = 0.0;
     cout << screenWidth << " " << screenHeight << endl;
     
-    cameraAnchorDistance = 100.0f;
+    cameraAnchorDistance = numeric_limits<float>::max();
     
-
     light.setOrientation(ofQuaternion(120, ofVec3f(1, 0, 0)));
     light.setDirectional();
     light.setSpecularColor(ofColor(0,0,0));
@@ -61,6 +60,31 @@ void ofApp::setup() {
     material2.setAmbientColor(ofColor(0));
     material2.setEmissiveColor(ofColor(25, 25, 25));
     material2.setShininess(60);
+    
+    anchorShouldAnimateToFront = false;
+    animationLerpAmount = 0.0f;
+    
+    anchorCamera.setNearClip(0.1f);
+    
+    button1Pressed = false;
+    button2Pressed = false;
+    button3Pressed = false;
+    button4Pressed = false;
+    button5Pressed = false;
+    button6Pressed = false;
+    
+    drum1.load("sounds/drum1.wav");
+    drum2.load("sounds/drum2.wav");
+    drum3.load("sounds/drum3.wav");
+    drum4.load("sounds/drum4.wav");
+    drum5.load("sounds/drum5.wav");
+    drum6.load("sounds/drum6.wav");
+    drum1.setVolume(0.75);
+    drum2.setVolume(0.75);
+    drum3.setVolume(0.75);
+    drum4.setVolume(0.75);
+    drum5.setVolume(0.75);
+    drum6.setVolume(0.75);
     
     
     //initialize ARProcessor
@@ -87,11 +111,11 @@ void ofApp::draw() {
         camera.begin();
         processor->setARCameraMatrices();
         doesClosestPlaneAnchorExist = false;
-//        closestPlaneAnchorPositionY = 0.0f;
+        closestPlaneAnchorPositionY = 0.0f;
         
         for (int i = 0; i < session.currentFrame.anchors.count; i++) {
             ARAnchor *anchor = session.currentFrame.anchors[i];
-            if ([anchor isKindOfClass:[ARPlaneAnchor class]]) {
+            if ([anchor isKindOfClass:[ARPlaneAnchor class]]) { //handle plane anchors
                 if (doesInstrumentExist) continue;
                 const ofMatrix4x4 &planeAnchorMatrix4x4 = toMat4(anchor.transform);
                 const ofVec3f &planeAnchorPosition = planeAnchorMatrix4x4.getTranslation();
@@ -107,10 +131,16 @@ void ofApp::draw() {
                     }
                 }
             }
-            else { //handle non-plane anchors
+            else { //handle instrument anchors
                 
+                const ofMatrix4x4 &anchorMatrix4x4 = toMat4(anchor.transform);
                 const ofVec3f &anchorPosition = anchorMatrix4x4.getTranslation();
                 cameraAnchorDistance = anchorPosition.distance(cameraPosition);
+                
+               
+                
+                
+                
                 
                 ofEnableDepthTest();
                 ofEnableLighting();
@@ -119,7 +149,51 @@ void ofApp::draw() {
                 
                 ofPushMatrix();
                 ofPushStyle();
-                ofMultMatrix(anchorMatrix4x4);
+                
+                
+                
+                if (cameraAnchorDistance < 0.2f) {
+                    
+                    anchorCamera.begin();
+                    ofTranslate(0, 0, -0.12);
+                    ofRotateXDeg(90);
+                                   
+//                    //animate from anchorMatrix4x4 to frontMatrix4x4
+//                    if (!anchorShouldAnimateToFront) { //called once
+//
+//
+//                        anchorShouldAnimateToFront = true;
+//                    }
+//                   //called every frame
+//                   const ofVec3f &frontPosition = cameraPosition + ofVec3f(0, 0, -0.1625);
+//                   const ofVec3f &animatedAnchorPosition = anchorPosition.getInterpolated(frontPosition, animationLerpAmount);
+//
+//                   const ofVec4f &anchorRotation = anchorMatrix4x4.getRotate().asVec4();
+//                   ofQuaternion q = cameraMatrix4x4.getRotate();
+//                   q.makeRotate(90, 1, 0, 0);
+//                   const ofVec4f &frontRotation = q.asVec4();
+//                   const ofVec4f animatedAnchorRotation = anchorRotation.getInterpolated(frontRotation, animationLerpAmount);
+//
+//
+//                   ofMatrix4x4 animatedAnchorMatrix4x4;
+//                   animatedAnchorMatrix4x4.setTranslation(animatedAnchorPosition);
+//                   animatedAnchorMatrix4x4.setRotate(ofQuaternion(animatedAnchorRotation));
+//                   ofMultMatrix(animatedAnchorMatrix4x4);
+//
+//
+//                   animationLerpAmount += 0.01f;
+//                   if (animationLerpAmount >= 1.0f) animationLerpAmount = 1.0f;
+                }
+                else {
+//                    if (anchorShouldAnimateToFront) { //called once
+//
+//                        anchorShouldAnimateToFront = false;
+//                    }
+                    //called every frame
+                    ofMultMatrix(anchorMatrix4x4);
+                }
+                
+                
                 
                 const float boxWidth = 0.15;
                 const float boxHeight = 0.1125;
@@ -131,23 +205,35 @@ void ofApp::draw() {
                 
                 material2.begin();
                 
+                const float buttonGap = 0.004f;
+                const float button1Depth = button1Pressed ? 0.001f : 0.004f;
+                const float button2Depth = button2Pressed ? 0.001f : 0.004f;
+                const float button3Depth = button3Pressed ? 0.001f : 0.004f;
+                const float button4Depth = button4Pressed ? 0.001f : 0.004f;
+                const float button5Depth = button5Pressed ? 0.001f : 0.004f;
+                const float button6Depth = button6Pressed ? 0.001f : 0.004f;
+               
                 
-                const float buttonDepth = 0.004;
-                ofDrawBox(-boxWidth/2 + boxWidth/6, 0, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxDepth + buttonDepth, boxHeight/2 - buttonDepth);
+                ofDrawBox(-boxWidth/2 + boxWidth/6, 0, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonGap, boxDepth + button1Depth, boxHeight/2 - buttonGap);
                 
-                ofDrawBox(0, 0, -boxHeight/2 + boxHeight/4, boxWidth/3, boxDepth + buttonDepth, boxHeight/2 - buttonDepth);
+                ofDrawBox(0, 0, -boxHeight/2 + boxHeight/4, boxWidth/3, boxDepth + button2Depth, boxHeight/2 - buttonGap);
                 
-                ofDrawBox(boxWidth/2 - boxWidth/6, 0, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxDepth + buttonDepth, boxHeight/2 - buttonDepth);
+                ofDrawBox(boxWidth/2 - boxWidth/6, 0, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonGap, boxDepth + button3Depth, boxHeight/2 - buttonGap);
                 
-                ofDrawBox(-boxWidth/2 + boxWidth/6, 0, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxDepth + buttonDepth, boxHeight/2 - buttonDepth);
+                ofDrawBox(-boxWidth/2 + boxWidth/6, 0, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonGap, boxDepth + button4Depth, boxHeight/2 - buttonGap);
                 
-                ofDrawBox(0, 0, boxHeight/2 - boxHeight/4, boxWidth/3, boxDepth + buttonDepth, boxHeight/2 - buttonDepth);
+                ofDrawBox(0, 0, boxHeight/2 - boxHeight/4, boxWidth/3, boxDepth + button5Depth, boxHeight/2 - buttonGap);
                 
-                ofDrawBox(boxWidth/2 - boxWidth/6, 0, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxDepth + buttonDepth, boxHeight/2 - buttonDepth);
+                ofDrawBox(boxWidth/2 - boxWidth/6, 0, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonGap, boxDepth + button6Depth, boxHeight/2 - buttonGap);
                 
                 
                 
                 material2.end();
+                
+                if (cameraAnchorDistance < 0.2f) {
+                 
+                    anchorCamera.end();
+                }
                 
                 ofPopStyle();
                 ofPopMatrix();
@@ -156,8 +242,6 @@ void ofApp::draw() {
                 light.disable();
                 ofDisableLighting();
                 ofDisableDepthTest();
-                
-                
                 
                 
             }
@@ -180,8 +264,7 @@ void ofApp::draw() {
         camera.end();
     }
     ofDisableDepthTest();
-    // ========== DEBUG STUFF ============= //
-    processor->debugInfo.drawDebugInformation(font);
+   
     
     if (!doesInstrumentExist) {
         ofPushStyle();
@@ -199,7 +282,7 @@ void ofApp::draw() {
             ofPopMatrix();
             
             //draw guide font
-            const string &guideText = "Looking for a surface to place your instrument";
+            const string &guideText = "Looking for a well-textured surface to place your instrument on";
             guideFont.drawString(guideText, screenWidth / 2 - guideFont.stringWidth(guideText) * 0.5, screenHeight * 0.575);
         }
         else {
@@ -219,33 +302,39 @@ void ofApp::draw() {
         ofPopStyle();
     }
     else {
-        if (cameraAnchorDistance < 0.2f) {
-
-            ofPushMatrix();
-            ofPushStyle();
-            ofSetRectMode(OF_RECTMODE_CENTER);
-            const float boxWidth = screenWidth * 0.95;
-            const float boxHeight = screenHeight * 0.95;
-            const float buttonDepth = screenHeight * 0.025;
-             ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
-            ofSetColor(255, 255, 255, 200);
-            ofDrawRectangle(0, 0, boxWidth, boxHeight);
-            
-            ofSetColor(100, 100, 100, 200);
-            ofDrawRectangle(-boxWidth/2 + boxWidth/6, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
-            ofDrawRectangle(0, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
-            ofDrawRectangle(boxWidth/2 - boxWidth/6, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
-            
-            ofDrawRectangle(-boxWidth/2 + boxWidth/6, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
-            ofDrawRectangle(0, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
-            ofDrawRectangle(boxWidth/2 - boxWidth/6, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
-            ofPopStyle();
-            ofPopMatrix();
-            
-        }
+//        if (cameraAnchorDistance < 0.2f) {
+//
+//            ofPushMatrix();
+//            ofPushStyle();
+//            ofSetRectMode(OF_RECTMODE_CENTER);
+//            const float boxWidth = screenWidth * 0.95;
+//            const float boxHeight = screenHeight * 0.95;
+//            const float buttonDepth = screenHeight * 0.025;
+//             ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
+//            ofSetColor(255, 255, 255, 200);
+//            ofDrawRectangle(0, 0, boxWidth, boxHeight);
+//
+//            ofSetColor(100, 100, 100, 200);
+//            ofDrawRectangle(-boxWidth/2 + boxWidth/6, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
+//            ofDrawRectangle(0, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
+//            ofDrawRectangle(boxWidth/2 - boxWidth/6, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
+//
+//            ofDrawRectangle(-boxWidth/2 + boxWidth/6, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
+//            ofDrawRectangle(0, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
+//            ofDrawRectangle(boxWidth/2 - boxWidth/6, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
+//            ofPopStyle();
+//            ofPopMatrix();
+//
+//        }
         
     }
     
+    
+    
+    
+    
+    // ========== DEBUG STUFF ============= //
+    processor->debugInfo.drawDebugInformation(font);
 }
 
 //--------------------------------------------------------------
@@ -258,8 +347,52 @@ void ofApp::touchDown(ofTouchEventArgs &touch) {
 ////    reset the AR Tracking
 //    [session runWithConfiguration:session.configuration options:ARSessionRunOptionResetTracking];
     
+    if (doesInstrumentExist) {
+        
+        const float boxWidth = screenWidth;
+        const float boxHeight = screenHeight;
+        
+        const float buttonWidth = boxWidth / 3;
+        const float buttonHeight = boxHeight / 2;
+        
+        ofRectangle button1(buttonWidth * 0, buttonHeight * 0, buttonWidth, buttonHeight);
+        ofRectangle button2(buttonWidth * 1, buttonHeight * 0, buttonWidth, buttonHeight);
+        ofRectangle button3(buttonWidth * 2, buttonHeight * 0, buttonWidth, buttonHeight);
+        
+        ofRectangle button4(buttonWidth * 0, buttonHeight * 1, buttonWidth, buttonHeight);
+        ofRectangle button5(buttonWidth * 1, buttonHeight * 1, buttonWidth, buttonHeight);
+        ofRectangle button6(buttonWidth * 2, buttonHeight * 1, buttonWidth, buttonHeight);
+        
+        if (button1.inside(touch.x, touch.y)) {
+            drum1.play();
+            button1Pressed = true;
+        }
+        if (button2.inside(touch.x, touch.y)) {
+            drum2.play();
+            button2Pressed = true;
+        }
+        if (button3.inside(touch.x, touch.y)) {
+            drum3.play();
+            button3Pressed = true;
+        }
+        if (button4.inside(touch.x, touch.y)) {
+            drum4.play();
+            button4Pressed = true;
+        }
+        if (button5.inside(touch.x, touch.y)) {
+            drum5.play();
+            button5Pressed = true;
+        }
+        if (button6.inside(touch.x, touch.y)) {
+            drum6.play();
+            button6Pressed = true;
+        }
+        
+    }
+    
     if (!doesInstrumentExist && doesClosestPlaneAnchorExist) {
         if (session.currentFrame && session.currentFrame.camera) {
+            
             //remove all plane anchors
             for (int i = 0; i < session.currentFrame.anchors.count; i++) {
                 ARAnchor *anchor = session.currentFrame.anchors[i];
@@ -270,38 +403,24 @@ void ofApp::touchDown(ofTouchEventArgs &touch) {
             doesClosestPlaneAnchorExist = false;
             
             //create instrument anchor
-            ARFrame *currentFrame = [session currentFrame];
-            matrix_float4x4 translation = matrix_identity_float4x4;
-//            translation.columns[3].z = -0.2; //-0.2
-            matrix_float4x4 transform = matrix_multiply(currentFrame.camera.transform, translation);
-
-            
-
-            // Add a new anchor to the session
-            ARAnchor *anchor = [[ARAnchor alloc] initWithTransform:transform];
-            [session addAnchor:anchor];
-            
-            
-//            processor->addAnchor(ofVec3f(touch.x + 0.25/2,touch.y + 0.25/2,0));
-            doesInstrumentExist = true;
-            
-            
-            
-            
-            
-            // somehow do all these above before adding the anchor?
-            const ofMatrix4x4 &cameraMatrix4x4 = toMat4(session.currentFrame.camera.transform);
-            anchorMatrix4x4 = toMat4(anchor.transform);
-            ofQuaternion q = cameraMatrix4x4.getRotate();
-            q.set(0.0, q.y(), 0.0, q.w());
-            anchorMatrix4x4.setRotate(q);
+            ofMatrix4x4 anchorMatrix4x4 = toMat4(session.currentFrame.camera.transform);
+            ofQuaternion anchorRotation = anchorMatrix4x4.getRotate();
+            anchorRotation.x() = 0.0f;
+            anchorRotation.z() = 0.0f;
+            anchorMatrix4x4.setRotate(anchorRotation);
             
             ofVec3f anchorPosition = anchorMatrix4x4.getTranslation();
-            anchorPosition.y = closestPlaneAnchorPositionY + 0.0;
+            anchorPosition.y = closestPlaneAnchorPositionY;
             anchorPosition.z -= 0.2;
             anchorMatrix4x4.setTranslation(anchorPosition);
+            
+            ARAnchor *anchor = [[ARAnchor alloc] initWithTransform:toSIMDMat4(anchorMatrix4x4)];
+            [session addAnchor:anchor];
+            doesInstrumentExist = true;
         }
     }
+    
+    
     
 }
 
@@ -311,6 +430,13 @@ void ofApp::touchMoved(ofTouchEventArgs &touch) {
 
 //--------------------------------------------------------------
 void ofApp::touchUp(ofTouchEventArgs &touch) {
+
+    button1Pressed = false;
+    button2Pressed = false;
+    button3Pressed = false;
+    button4Pressed = false;
+    button5Pressed = false;
+    button6Pressed = false;
 }
 
 //--------------------------------------------------------------
