@@ -43,7 +43,7 @@ void ofApp::setup() {
     
     cameraAnchorDistance = numeric_limits<float>::max();
     
-    light.setOrientation(ofQuaternion(120, ofVec3f(1, 0, 0)));
+    light.setOrientation(ofQuaternion(180, ofVec3f(1, 0, 0)));
     light.setDirectional();
     light.setSpecularColor(ofColor(0,0,0));
     light.setDiffuseColor(ofColor(200, 200, 200));
@@ -85,8 +85,7 @@ void ofApp::setup() {
     drum4.setVolume(0.75);
     drum5.setVolume(0.75);
     drum6.setVolume(0.75);
-    
-    
+
     //initialize ARProcessor
     processor = ARProcessor::create(session);
     processor->deviceOrientationChanged(UIInterfaceOrientationLandscapeRight);
@@ -137,74 +136,76 @@ void ofApp::draw() {
                 const ofVec3f &anchorPosition = anchorMatrix4x4.getTranslation();
                 cameraAnchorDistance = anchorPosition.distance(cameraPosition);
                 
-               
-                
-                
-                
-                
                 ofEnableDepthTest();
                 ofEnableLighting();
                 light.enable();
                 
-                
                 ofPushMatrix();
                 ofPushStyle();
                 
-                
-                
+                bool isUsingAnchorCamera = false;
                 if (cameraAnchorDistance < 0.2f) {
-                    
-                    anchorCamera.begin();
-                    ofTranslate(0, 0, -0.12);
-                    ofRotateXDeg(90);
-                                   
-//                    //animate from anchorMatrix4x4 to frontMatrix4x4
-//                    if (!anchorShouldAnimateToFront) { //called once
-//
-//
-//                        anchorShouldAnimateToFront = true;
-//                    }
-//                   //called every frame
-//                   const ofVec3f &frontPosition = cameraPosition + ofVec3f(0, 0, -0.1625);
-//                   const ofVec3f &animatedAnchorPosition = anchorPosition.getInterpolated(frontPosition, animationLerpAmount);
-//
-//                   const ofVec4f &anchorRotation = anchorMatrix4x4.getRotate().asVec4();
-//                   ofQuaternion q = cameraMatrix4x4.getRotate();
-//                   q.makeRotate(90, 1, 0, 0);
-//                   const ofVec4f &frontRotation = q.asVec4();
-//                   const ofVec4f animatedAnchorRotation = anchorRotation.getInterpolated(frontRotation, animationLerpAmount);
-//
-//
-//                   ofMatrix4x4 animatedAnchorMatrix4x4;
-//                   animatedAnchorMatrix4x4.setTranslation(animatedAnchorPosition);
-//                   animatedAnchorMatrix4x4.setRotate(ofQuaternion(animatedAnchorRotation));
-//                   ofMultMatrix(animatedAnchorMatrix4x4);
-//
-//
-//                   animationLerpAmount += 0.01f;
-//                   if (animationLerpAmount >= 1.0f) animationLerpAmount = 1.0f;
+                    if (animationLerpAmount >= 1.0f) {
+                        
+                        anchorCamera.begin();
+                        ofTranslate(0, 0, -0.12);
+                        ofRotateXDeg(90);
+                        animationLerpAmount = 1.0f;
+                        isUsingAnchorCamera = true;
+                    }
+                    else { //make below a function and simplify?
+                        const float animationLerpAmountPow2 = powf(animationLerpAmount, 2);
+                        const ofVec3f &frontPosition = cameraPosition;
+                        const ofVec3f &animatedAnchorPosition = anchorPosition.getInterpolated(frontPosition, animationLerpAmountPow2);
+
+                        const ofVec4f &anchorRotation = anchorMatrix4x4.getRotate().asVec4();
+                        const ofVec4f &frontRotation = cameraMatrix4x4.getRotate().asVec4();
+                        const ofVec4f animatedAnchorRotation = anchorRotation.getInterpolated(frontRotation, animationLerpAmount);
+
+                        ofMatrix4x4 animatedAnchorMatrix4x4;
+                        animatedAnchorMatrix4x4.setTranslation(animatedAnchorPosition);
+                        animatedAnchorMatrix4x4.setRotate(ofQuaternion(animatedAnchorRotation));
+                        
+                        ofMultMatrix(animatedAnchorMatrix4x4);
+                        ofTranslate(0, 0, animationLerpAmountPow2 * -0.1625);
+                        ofRotateXDeg(animationLerpAmount * 90);
+                        animationLerpAmount += 0.1f;
+                    }
                 }
                 else {
-//                    if (anchorShouldAnimateToFront) { //called once
-//
-//                        anchorShouldAnimateToFront = false;
-//                    }
-                    //called every frame
-                    ofMultMatrix(anchorMatrix4x4);
+                    if (animationLerpAmount <= 0.0f) {
+                     
+                        ofMultMatrix(anchorMatrix4x4);
+                        animationLerpAmount = 0.0f;
+                    }
+                    else { //make below a function and simplify?
+                        const float animationLerpAmountPow2 = powf(animationLerpAmount, 2);
+                        const ofVec3f &frontPosition = cameraPosition;
+                        const ofVec3f &animatedAnchorPosition = anchorPosition.getInterpolated(frontPosition, animationLerpAmountPow2);
+
+                        const ofVec4f &anchorRotation = anchorMatrix4x4.getRotate().asVec4();
+                        const ofVec4f &frontRotation = cameraMatrix4x4.getRotate().asVec4();
+                        const ofVec4f animatedAnchorRotation = anchorRotation.getInterpolated(frontRotation, animationLerpAmount);
+
+                        ofMatrix4x4 animatedAnchorMatrix4x4;
+                        animatedAnchorMatrix4x4.setTranslation(animatedAnchorPosition);
+                        animatedAnchorMatrix4x4.setRotate(ofQuaternion(animatedAnchorRotation));
+                        
+                        ofMultMatrix(animatedAnchorMatrix4x4);
+                        ofTranslate(0, 0, animationLerpAmountPow2 * -0.1625);
+                        ofRotateXDeg(animationLerpAmount * 90);
+                        animationLerpAmount -= 0.1f;
+                    }
                 }
-                
-                
-                
                 const float boxWidth = 0.15;
                 const float boxHeight = 0.1125;
                 const float boxDepth = 0.03;
            
                 material.begin();
-                ofDrawBox(boxWidth, boxDepth, boxHeight);
+                ofDrawBox(boxWidth, boxDepth, boxHeight); //instrument body
                 material.end();
                 
                 material2.begin();
-                
                 const float buttonGap = 0.004f;
                 const float button1Depth = button1Pressed ? 0.001f : 0.004f;
                 const float button2Depth = button2Pressed ? 0.001f : 0.004f;
@@ -212,38 +213,23 @@ void ofApp::draw() {
                 const float button4Depth = button4Pressed ? 0.001f : 0.004f;
                 const float button5Depth = button5Pressed ? 0.001f : 0.004f;
                 const float button6Depth = button6Pressed ? 0.001f : 0.004f;
-               
-                
                 ofDrawBox(-boxWidth/2 + boxWidth/6, 0, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonGap, boxDepth + button1Depth, boxHeight/2 - buttonGap);
-                
                 ofDrawBox(0, 0, -boxHeight/2 + boxHeight/4, boxWidth/3, boxDepth + button2Depth, boxHeight/2 - buttonGap);
-                
                 ofDrawBox(boxWidth/2 - boxWidth/6, 0, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonGap, boxDepth + button3Depth, boxHeight/2 - buttonGap);
-                
                 ofDrawBox(-boxWidth/2 + boxWidth/6, 0, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonGap, boxDepth + button4Depth, boxHeight/2 - buttonGap);
-                
                 ofDrawBox(0, 0, boxHeight/2 - boxHeight/4, boxWidth/3, boxDepth + button5Depth, boxHeight/2 - buttonGap);
-                
                 ofDrawBox(boxWidth/2 - boxWidth/6, 0, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonGap, boxDepth + button6Depth, boxHeight/2 - buttonGap);
-                
-                
-                
                 material2.end();
                 
-                if (cameraAnchorDistance < 0.2f) {
-                 
+                if (isUsingAnchorCamera) {
                     anchorCamera.end();
                 }
-                
                 ofPopStyle();
                 ofPopMatrix();
-                
                 
                 light.disable();
                 ofDisableLighting();
                 ofDisableDepthTest();
-                
-                
             }
         }
         if (!doesInstrumentExist && doesClosestPlaneAnchorExist) {
@@ -265,7 +251,6 @@ void ofApp::draw() {
     }
     ofDisableDepthTest();
    
-    
     if (!doesInstrumentExist) {
         ofPushStyle();
         ofSetColor(255, 255, 255, 255);
@@ -301,38 +286,6 @@ void ofApp::draw() {
         }
         ofPopStyle();
     }
-    else {
-//        if (cameraAnchorDistance < 0.2f) {
-//
-//            ofPushMatrix();
-//            ofPushStyle();
-//            ofSetRectMode(OF_RECTMODE_CENTER);
-//            const float boxWidth = screenWidth * 0.95;
-//            const float boxHeight = screenHeight * 0.95;
-//            const float buttonDepth = screenHeight * 0.025;
-//             ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
-//            ofSetColor(255, 255, 255, 200);
-//            ofDrawRectangle(0, 0, boxWidth, boxHeight);
-//
-//            ofSetColor(100, 100, 100, 200);
-//            ofDrawRectangle(-boxWidth/2 + boxWidth/6, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
-//            ofDrawRectangle(0, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
-//            ofDrawRectangle(boxWidth/2 - boxWidth/6, -boxHeight/2 + boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
-//
-//            ofDrawRectangle(-boxWidth/2 + boxWidth/6, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
-//            ofDrawRectangle(0, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
-//            ofDrawRectangle(boxWidth/2 - boxWidth/6, boxHeight/2 - boxHeight/4, boxWidth/3 - buttonDepth, boxHeight/2 - buttonDepth);
-//            ofPopStyle();
-//            ofPopMatrix();
-//
-//        }
-        
-    }
-    
-    
-    
-    
-    
     // ========== DEBUG STUFF ============= //
     processor->debugInfo.drawDebugInformation(font);
 }
@@ -387,7 +340,6 @@ void ofApp::touchDown(ofTouchEventArgs &touch) {
             drum6.play();
             button6Pressed = true;
         }
-        
     }
     
     if (!doesInstrumentExist && doesClosestPlaneAnchorExist) {
@@ -419,9 +371,6 @@ void ofApp::touchDown(ofTouchEventArgs &touch) {
             doesInstrumentExist = true;
         }
     }
-    
-    
-    
 }
 
 //--------------------------------------------------------------
